@@ -7,6 +7,9 @@ const res = require('express/lib/response');
 const cheerio = require('cheerio');
 const axios = require('axios');
 
+const cors = require('cors');
+app.use(cors());
+
 app.get('/', function(req, res){
     res.json('This is my webscraper')
 })
