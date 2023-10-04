@@ -9,11 +9,10 @@ const axios = require('axios');
 
 const cors = require('cors');
 
-// Configurar CORS para permitir cualquier origen
 app.use(cors({ origin: '*' }));
 
 app.get('/', function(req, res){
-    res.json('This is my webscraper')
+    res.json('Football Players Stats per Team and Season')
 })
 
 const teams = {
@@ -41,9 +40,6 @@ app.get('/players/:team/:year', function(req, res){
 
     const idUrl = teams[team];
 
-    const text = `The team is ${team} and the year is ${year}`
-    //res.send(text)
-
     console.log(team, year, idUrl)
 
     const url = `https://fbref.com/es/equipos/${idUrl}/${year}/all_comps/Estadisticas-de-${team}-Todas-las-competencias`;
@@ -58,10 +54,8 @@ app.get('/players/:team/:year', function(req, res){
         const player = removeAccents($(row).find('th[data-stat="player"] a').text().trim());
         const nationality = $(row).find('td[data-stat="nationality"]').text().trim();
         const position = $(row).find('td[data-stat="position"]').text().trim();
-        //const age = $(row).find('td[data-stat="age"]').text().trim();
         const matches = $(row).find('td[data-stat="games"]').text().trim();
         const matches_starts = $(row).find('td[data-stat="games_starts"]').text().trim();
-        //const minutes = $(row).find('td[data-stat="minutes"]').text().trim();
         const minutes = $(row).find('td[data-stat="minutes"]').text().trim().replace(/,/g, '');
         const minutes_90s = $(row).find('td[data-stat="minutes_90s"]').text().trim();
         const goals = $(row).find('td[data-stat="goals"]').text().trim();
@@ -76,7 +70,6 @@ app.get('/players/:team/:year', function(req, res){
         const goals_assists_per90 = $(row).find('td[data-stat="goals_assists_per90"]').text().trim();
         const goals_pens_per90 = $(row).find('td[data-stat="goals_pens_per90"]').text().trim();
         const goals_assists_pens_per90 = $(row).find('td[data-stat="goals_assists_pens_per90"]').text().trim();
-        //const matches = $(row).find('td[data-stat="matches"]').text().trim();
 
         const item = {};
         const isPlayerAdded = data.some(item => item.player === player);
