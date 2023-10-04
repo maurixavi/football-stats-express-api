@@ -4,6 +4,9 @@ const app = express();
 const port = process.env.PORT || 3000;
 const res = require('express/lib/response');
 
+const cheerio = require('cheerio');
+const axios = require('axios');
+
 app.get('/', function(req, res){
     res.json('This is my webscraper')
 })
@@ -34,11 +37,94 @@ app.get('/players/:team/:year', function(req, res){
     const idUrl = teams[team];
 
     const text = `The team is ${team} and the year is ${year}`
-    res.send(text)
+    //res.send(text)
 
     console.log(team, year, idUrl)
 
+    const url = `https://fbref.com/es/equipos/${idUrl}/${year}/all_comps/Estadisticas-de-${team}-Todas-las-competencias`;
+    console.log(url)
+
+    axios.get(url)
+        .then(response => {
+        const $ = cheerio.load(response.data);
+        const data = [];
+
+        $('table.stats_table tbody tr').each((i, row) => {
+        const player = removeAccents($(row).find('th[data-stat="player"] a').text().trim());
+        const nationality = $(row).find('td[data-stat="nationality"]').text().trim();
+        const position = $(row).find('td[data-stat="position"]').text().trim();
+        //const age = $(row).find('td[data-stat="age"]').text().trim();
+        const matches = $(row).find('td[data-stat="games"]').text().trim();
+        const matches_starts = $(row).find('td[data-stat="games_starts"]').text().trim();
+        //const minutes = $(row).find('td[data-stat="minutes"]').text().trim();
+        const minutes = $(row).find('td[data-stat="minutes"]').text().trim().replace(/,/g, '');
+        const minutes_90s = $(row).find('td[data-stat="minutes_90s"]').text().trim();
+        const goals = $(row).find('td[data-stat="goals"]').text().trim();
+        const assists = $(row).find('td[data-stat="assists"]').text().trim();
+        const goal_assists = parseInt(goals) + parseInt(assists);
+        const goals_pens = $(row).find('td[data-stat="goals_pens"]').text().trim();
+        const pens_made = $(row).find('td[data-stat="pens_made"]').text().trim();
+        const pens_attempted = $(row).find('td[data-stat="pens_att"]').text().trim();
+        const card_yellow = $(row).find('td[data-stat="card_yellow"]').text().trim();
+        const cards_red = $(row).find('td[data-stat="cards_red"]').text().trim();
+        const assists_per90 = $(row).find('td[data-stat="assists_per90"]').text().trim();
+        const goals_assists_per90 = $(row).find('td[data-stat="goals_assists_per90"]').text().trim();
+        const goals_pens_per90 = $(row).find('td[data-stat="goals_pens_per90"]').text().trim();
+        const goals_assists_pens_per90 = $(row).find('td[data-stat="goals_assists_pens_per90"]').text().trim();
+        //const matches = $(row).find('td[data-stat="matches"]').text().trim();
+
+        const item = {};
+        const isPlayerAdded = data.some(item => item.player === player);
+        if (!isPlayerAdded && player !== ''){
+            data.push({
+                player,
+                nationality,
+                position,
+                matches,
+                matches_starts,
+                minutes: minutes !== "" ? parseInt(minutes) : 0,
+                minutes_90s,
+                goals: goals !== "" ? parseInt(goals) : 0,
+                assists: assists !== "" ? parseInt(assists) : 0,
+                goal_assists: parseInt(goals) + parseInt(assists),
+                goals_pens,
+                pens_made,
+                pens_attempted,
+                card_yellow: card_yellow !== "" ? parseInt(card_yellow) : 0,
+                cards_red: cards_red !== "" ? parseInt(cards_red) : 0,
+                assists_per90,
+                goals_assists_per90,
+                goals_pens_per90,
+                goals_assists_pens_per90
+            });
+            }
+        });
+
+        res.json(data);
+
+       /* fs.writeFile(`data/${team}_${year}.json`, JSON.stringify(data), err => {
+            if (err) {
+              console.error(err);
+              return res.status(500).json({ error: 'Error while writing the file' });
+            }
+    
+            console.log('File created successfully');
+            res.json(data);
+          }); */
+    })
+    .catch(error => {
+        console.log(error);
+        res.status(500).json({ error: 'Error getting data' });
+
+    });
 
 })
+
+
+//normalization player names
+function removeAccents(str) {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 
 app.listen(port, () => console.log(`server running on PORT ${port}`));
