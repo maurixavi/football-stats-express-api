@@ -7,6 +7,11 @@ const res = require('express/lib/response');
 const cheerio = require('cheerio');
 const axios = require('axios');
 
+const cors = require('cors');
+
+// Configurar CORS para permitir cualquier origen
+app.use(cors({ origin: '*' }));
+
 app.get('/', function(req, res){
     res.json('This is my webscraper')
 })
